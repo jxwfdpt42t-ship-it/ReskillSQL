@@ -1,0 +1,272 @@
+[
+  {
+    "version": 1,
+    "timestamp": "2026-07-02T00:13:21",
+    "action": "accepted",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0001.md",
+    "score": 1.0,
+    "metadata": {
+      "run_id": "round-20260702-001306-083248",
+      "reason": "validation_passed_delta=0.0000",
+      "before_validation_accuracy": 1.0,
+      "after_validation_accuracy": 1.0,
+      "patch_budget": {
+        "max_rules": 2,
+        "kept_rules": 1,
+        "original_rules": 1,
+        "clipped": false
+      }
+    }
+  },
+  {
+    "version": 2,
+    "timestamp": "2026-07-02T02:09:41",
+    "action": "accepted",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0002.md",
+    "score": 1.0,
+    "metadata": {
+      "run_id": "round-20260702-020926-109564",
+      "reason": "sql_aware_gate_passed_delta=0.0000",
+      "before_validation_accuracy": 1.0,
+      "after_validation_accuracy": 1.0,
+      "patch_budget": {
+        "max_rules": 2,
+        "kept_rules": 1,
+        "original_rules": 1,
+        "clipped": false
+      }
+    }
+  },
+  {
+    "version": 3,
+    "timestamp": "2026-07-07T12:21:01",
+    "action": "accepted",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0003.md",
+    "score": 1.0,
+    "metadata": {
+      "run_id": "round-20260707-122038-438108",
+      "reason": "strong_pass_score=8_delta=1.0000",
+      "before_validation_accuracy": 0.0,
+      "after_validation_accuracy": 1.0,
+      "patch_budget": {
+        "max_rules": 1,
+        "kept_rules": 1,
+        "original_rules": 1,
+        "clipped": false
+      }
+    }
+  },
+  {
+    "version": 4,
+    "timestamp": "2026-07-07T22:26:59",
+    "action": "accepted",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0004.md",
+    "score": 1.0,
+    "metadata": {
+      "run_id": "round-20260707-222637-757559",
+      "reason": "strong_pass_score=8_delta=1.0000",
+      "before_validation_accuracy": 0.0,
+      "after_validation_accuracy": 1.0,
+      "patch_budget": {
+        "max_rules": 1,
+        "kept_rules": 1,
+        "original_rules": 1,
+        "clipped": false
+      }
+    }
+  },
+  {
+    "version": 5,
+    "timestamp": "2026-07-07T22:53:10",
+    "action": "accepted_natural_replay",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0005.md",
+    "score": 0.57,
+    "metadata": {
+      "result": "natural_bird_replay_100_examples",
+      "before_accuracy": 0.53,
+      "after_accuracy": 0.57,
+      "improvements": [
+        "1506",
+        "1422",
+        "1435",
+        "1155"
+      ],
+      "regressions": [],
+      "report": "reports/natural_replay_compiled_checks_20260707_v3.json"
+    }
+  },
+  {
+    "version": 6,
+    "timestamp": "2026-07-07T22:55:47",
+    "action": "accepted",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0006.md",
+    "score": 1.0,
+    "metadata": {
+      "run_id": "round-20260707-225528-304493",
+      "reason": "strong_pass_score=8_delta=1.0000",
+      "before_validation_accuracy": 0.0,
+      "after_validation_accuracy": 1.0,
+      "patch_budget": {
+        "max_rules": 2,
+        "kept_rules": 1,
+        "original_rules": 1,
+        "clipped": false
+      }
+    }
+  },
+  {
+    "version": 7,
+    "timestamp": "2026-07-07T23:03:16",
+    "action": "accepted_natural_replay_expanded_categories",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0007.md",
+    "score": 0.58,
+    "metadata": {
+      "result": "natural_bird_replay_100_examples",
+      "before_accuracy": 0.53,
+      "after_accuracy": 0.58,
+      "improvements": [
+        "1498",
+        "1506",
+        "1422",
+        "1435",
+        "1155"
+      ],
+      "regressions": [],
+      "categories": {
+        "aggregation": 1,
+        "projection": 4
+      },
+      "report": "reports/natural_replay_compiled_checks_20260707_v4.json"
+    }
+  },
+  {
+    "version": 8,
+    "timestamp": "2026-07-07T23:29:11",
+    "action": "accepted_holdout_replay_checked",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0008.md",
+    "score": 0.58,
+    "metadata": {
+      "update_replay": {
+        "dataset": "data/bird_minidev_full_001_100.jsonl",
+        "before_accuracy": 0.53,
+        "after_accuracy": 0.58,
+        "regressions": []
+      },
+      "holdout_replay": {
+        "dataset": "data/bird_minidev_full_101_150.jsonl",
+        "before_accuracy": 0.4,
+        "after_accuracy": 0.42,
+        "improvements": [
+          "1035"
+        ],
+        "regressions": [],
+        "report": "reports/holdout_replay_compiled_checks_20260707_101_150_v2.json"
+      }
+    }
+  },
+  {
+    "version": 9,
+    "timestamp": "2026-07-08T00:04:14",
+    "action": "accepted_tool_aware_1_0",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0009.md",
+    "score": 0.59,
+    "metadata": {
+      "update_replay": {
+        "before_accuracy": 0.53,
+        "after_accuracy": 0.59,
+        "regressions": []
+      },
+      "holdout_replay": {
+        "before_accuracy": 0.4,
+        "after_accuracy": 0.44,
+        "regressions": []
+      },
+      "tool_aware": [
+        "value_lookup_policy",
+        "schema_context_policy"
+      ],
+      "suite_report": "reports/self_update_replay_suite_20260707.json"
+    }
+  },
+  {
+    "version": 10,
+    "timestamp": "2026-07-10T00:00:00",
+    "action": "accepted_live_safe",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0010-live-safe.md",
+    "score": 0.68,
+    "metadata": {
+      "live_compare": {
+        "dataset": "data/bird_minidev_50.jsonl",
+        "before_skill": "skills/query-writing/versions/query-writing-v0002.md",
+        "after_skill": "skills/query-writing/SKILL.md",
+        "before_accuracy": 0.64,
+        "after_accuracy": 0.68,
+        "improvements": [
+          "bird_minidev_1484",
+          "bird_minidev_1506",
+          "bird_minidev_1350"
+        ],
+        "regressions": [
+          "bird_minidev_1473"
+        ],
+        "report": "reports/live_skill_compare_bird50_v0002_vs_v0010_live_safe_final_20260710.json"
+      },
+      "replay_collection": {
+        "dataset": "BIRD MiniDev first 500 prepared examples",
+        "before_accuracy": 0.464,
+        "after_accuracy": 0.514,
+        "report": "reports/self_update_replay_collection_500_20260709.json"
+      }
+    }
+  },
+  {
+    "version": 11,
+    "timestamp": "2026-07-12T00:00:00",
+    "action": "validated_live100_and_ablation",
+    "skill_path": "/Users/houhoushufan/Desktop/text to sql/skills/query-writing/versions/query-writing-v0010-live-safe.md",
+    "score": 0.67,
+    "metadata": {
+      "live_compare": {
+        "dataset": "data/bird_minidev_full_001_100.jsonl",
+        "before_skill": "skills/query-writing/versions/query-writing-v0002.md",
+        "after_skill": "skills/query-writing/SKILL.md",
+        "before_accuracy": 0.58,
+        "after_accuracy": 0.67,
+        "improvements": [
+          "1472",
+          "1484",
+          "1498",
+          "1506",
+          "1525",
+          "1350",
+          "1376",
+          "1392",
+          "1435",
+          "1156",
+          "1185",
+          "1187"
+        ],
+        "regressions": [
+          "1473",
+          "1533",
+          "1171"
+        ],
+        "report": "reports/live_skill_compare_bird100_v0002_vs_v0010_live_safe_20260712.json"
+      },
+      "replay_ablation": {
+        "dataset": "data/bird_minidev_full_001_100.jsonl",
+        "no_reskill_accuracy": 0.53,
+        "query_skill_checks_only_accuracy": 0.58,
+        "value_lookup_only_accuracy": 0.54,
+        "full_system_accuracy": 0.59,
+        "report": "reports/replay_ablation_bird100_20260712.json"
+      },
+      "replay_collection": {
+        "dataset": "BIRD MiniDev first 500 prepared examples",
+        "before_accuracy": 0.464,
+        "after_accuracy": 0.514,
+        "report": "reports/self_update_replay_collection_500_20260709.json"
+      }
+    }
+  }
+]

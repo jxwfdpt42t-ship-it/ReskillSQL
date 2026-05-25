@@ -1,0 +1,55 @@
+[project]
+name = "self-evolving-text2sql"
+version = "0.1.0"
+description = "A DeepAgents-style Text-to-SQL agent with execution-based validation and self-evolving skill updates"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "deepagents>=0.3.5",
+    "langchain>=1.2.3",
+    "langchain-community>=0.3.0",
+    "langchain-openai>=1.0.0",
+    "langgraph>=1.0.6",
+    "sqlalchemy>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "openai>=2.0.0",
+    "tavily-python>=0.5.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+text2sql-agent = "agent:main"
+text2sql-evolve = "text2sql_evolver.run_round:main"
+text2sql-prepare-bird = "text2sql_evolver.bird_adapter:main"
+text2sql-make-splits = "text2sql_evolver.benchmarks.make_self_update_splits:main"
+text2sql-make-sql-skill-benchmark = "text2sql_evolver.benchmarks.make_sql_skill_benchmark:main"
+text2sql-make-projection-replay-benchmark = "text2sql_evolver.benchmarks.make_projection_replay_benchmark:main"
+text2sql-summarize-self-update = "text2sql_evolver.benchmarks.summarize_self_update:main"
+text2sql-evaluate-skill-replay = "text2sql_evolver.benchmarks.evaluate_skill_replay:main"
+text2sql-summarize-replay-suite = "text2sql_evolver.benchmarks.summarize_replay_suite:main"
+text2sql-summarize-replay-collection = "text2sql_evolver.benchmarks.summarize_replay_collection:main"
+text2sql-live-skill-compare = "text2sql_evolver.benchmarks.live_skill_compare:main"
+text2sql-replay-ablation = "text2sql_evolver.benchmarks.replay_ablation:main"
+text2sql-render-report = "text2sql_evolver.benchmarks.render_showcase_report:main"
+text2sql-make-generated-transfer-benchmark = "text2sql_evolver.benchmarks.make_generated_transfer_benchmark:main"
+text2sql-make-multiround-self-update-benchmark = "text2sql_evolver.benchmarks.make_multiround_self_update_benchmark:main"
+text2sql-summarize-multiround-self-update = "text2sql_evolver.benchmarks.summarize_multiround_self_update:main"
+text2sql-demo = "text2sql_evolver.demo:main"
+
+[project.urls]
+Repository = "https://github.com/your-name/self-evolving-text2sql"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["agent"]
+
+[tool.setuptools.packages.find]
+include = ["text2sql_evolver*"]

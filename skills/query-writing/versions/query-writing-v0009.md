@@ -1,0 +1,126 @@
+---
+name: query-writing
+description: For writing and executing SQL queries - from simple single-table queries to complex multi-table JOINs and aggregations
+---
+
+# Query Writing Skill
+
+## When to Use This Skill
+
+Use this skill when you need to answer a question by writing and executing a SQL query.
+
+## Workflow for Simple Queries
+
+For straightforward questions about a single table:
+
+1. **Identify the table** - Which table has the data?
+2. **Get the schema** - Use `sql_db_schema` to see columns
+3. **Write the query** - SELECT relevant columns with WHERE/LIMIT/ORDER BY
+4. **Execute** - Run with `sql_db_query`
+5. **Format answer** - Present results clearly
+
+## Workflow for Complex Queries
+
+For questions requiring multiple tables:
+
+### 1. Plan Your Approach
+**Use `write_todos` to break down the task:**
+- Identify all tables needed
+- Map relationships (foreign keys)
+- Plan JOIN structure
+- Determine aggregations
+
+### 2. Examine Schemas
+Use `sql_db_schema` for EACH table to find join columns and needed fields.
+
+### 3. Construct Query
+- SELECT - Columns and aggregates
+- FROM/JOIN - Connect tables on FK = PK
+- WHERE - Filters before aggregation
+- GROUP BY - All non-aggregate columns
+- ORDER BY - Sort meaningfully
+- LIMIT - Default 5 rows
+
+### 4. Validate and Execute
+Check all JOINs have conditions, GROUP BY is correct, then run query.
+
+## Example: Revenue by Country
+```sql
+SELECT
+    c.Country,
+    ROUND(SUM(i.Total), 2) as TotalRevenue
+FROM Invoice i
+INNER JOIN Customer c ON i.CustomerId = c.CustomerId
+GROUP BY c.Country
+ORDER BY TotalRevenue DESC
+LIMIT 5;
+```
+
+## Mandatory Pre-SQL Plan
+
+Before writing SQL, silently produce this internal plan and use it to draft the final query. This is mandatory, not an optional reminder.
+
+### Projection Check
+1. Set answer_columns to the exact entity, attribute, or metric requested by the question.
+2. Set condition_columns to fields used only to filter or qualify the answer, including labels, statuses, dates, categories, joins, and HAVING counts.
+3. Set outer_select to answer_columns only; keep condition_columns and helper expressions out of the final SELECT unless explicitly requested.
+4. For "Which/List/Name X with condition Y" questions, SELECT X only and keep Y in WHERE, JOIN, GROUP BY, HAVING, ORDER BY, or subqueries.
+
+### Result Shape Check
+1. If the question asks to list, state, show, return, or name repeated entities or attributes, use DISTINCT unless duplicates are explicitly meaningful.
+2. If the question asks "how many", project one count expression unless it asks for grouped counts.
+3. If the question asks for one top/bottom/highest/lowest result, include ORDER BY with explicit direction and LIMIT 1.
+4. If helper columns are needed for grouping, filtering, sorting, or ranking, use them internally without projecting them.
+
+### Aggregation Check
+1. If the question asks for a highest/lowest monthly value, decide whether it means the maximum single row or the highest monthly total.
+2. For monthly totals, group by the month expression before ordering by the aggregate metric.
+3. Use SUM for total consumption, total amount, total sales, and other cumulative quantities.
+4. Select only the final requested aggregate value unless the question asks to show the month.
+
+### Filtering Check
+1. If the question asks for observed, known, available, or recorded attributes, exclude NULL values for that requested attribute.
+2. Put non-null requirements in WHERE before ordering or limiting.
+3. Keep the non-null field in SELECT only when it is part of the requested answer.
+4. Do not add non-null filters for unrelated helper columns.
+
+### Ratio And Percentage Check
+1. Set numerator and denominator directly from the wording and evidence before writing SQL.
+2. Use REAL arithmetic or CAST for division.
+3. Project only the final requested ratio, percentage, rate, or deviation unless the question asks to show intermediate counts.
+4. Do not output numerator or denominator helper counts as separate columns unless explicitly requested.
+
+### Value Lookup Policy
+1. If a WHERE literal comes from an entity name, product description, location, status, category, or date in the question, verify the stored database spelling or format before finalizing SQL.
+2. Normalize date-like literals to the stored database format instead of preserving the user wording blindly.
+3. Prefer exact stored values from the same table column over approximate surface forms from the question.
+4. Do not rewrite numeric thresholds or NULL checks with value lookup.
+
+### Schema Context Policy
+1. When a question phrase can map to multiple columns, inspect schema candidates before choosing the final column.
+2. Prefer columns whose names match the requested answer entity, filter attribute, or evidence term.
+3. Use schema context to disambiguate similarly named fields across joined tables.
+4. Do not invent columns that are absent from schema context or the database schema.
+
+## Quality Guidelines
+
+- Query only relevant columns (not SELECT *)
+- Always apply LIMIT (5 default)
+- Use table aliases for clarity
+- For complex queries: use write_todos to plan
+- Never use DML statements (INSERT, UPDATE, DELETE, DROP)
+
+## Learned Rules From Validation Failures
+
+These rules were generated by the optimizer LLM, aggregated by SQL error category, and grounded in execution evidence.
+- **projection**: The draft SQL omits the DISTINCT keyword in the SELECT clause when the natural language question implies a request for unique results.
+  - Mandatory plan: Projection Check
+    1. Set answer_columns to the entity, attribute, or metric explicitly requested after words like which, list, name, what, or how many.
+    2. Set condition_columns to columns used only to filter or qualify the answer, such as labels, statuses, dates, categories, joins, or HAVING counts.
+    3. Set outer_select to answer_columns only; do not include condition_columns or helper expressions unless the question explicitly asks to show them.
+    4. For questions of the form 'Which/List X with condition Y', SELECT X only and keep Y only in WHERE, JOIN, GROUP BY, HAVING, ORDER BY, or subqueries.
+  - Workflow 1: Write down the exact columns requested by the question before writing SELECT.
+  - Workflow 2: Keep helper columns used only for ORDER BY, GROUP BY, filters, or joins out of the final SELECT unless requested.
+  - Workflow 3: If an aggregate is needed for ranking, use it in ORDER BY or a subquery but project only the requested answer.
+  - Evidence: selected column mismatch
+  - Merged from: projection_distinct_candidate_001
