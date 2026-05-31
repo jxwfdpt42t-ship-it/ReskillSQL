@@ -1,7 +1,7 @@
 [project]
 name = "self-evolving-text2sql"
 version = "0.1.0"
-description = "A DeepAgents-style Text-to-SQL agent with execution-based validation and self-evolving skill updates"
+description = "A self-reskilling Text-to-SQL agent with SQL-aware skill evolution and BIRD-based evaluation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -42,7 +42,8 @@ text2sql-summarize-multiround-self-update = "text2sql_evolver.benchmarks.summari
 text2sql-demo = "text2sql_evolver.demo:main"
 
 [project.urls]
-Repository = "https://github.com/your-name/self-evolving-text2sql"
+Repository = "https://github.com/jxwfdpt42t-ship-it/ReskillSQL"
+Issues = "https://github.com/jxwfdpt42t-ship-it/ReskillSQL/issues"
 
 [build-system]
 requires = ["setuptools>=61.0"]
