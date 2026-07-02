@@ -107,6 +107,8 @@ benchmark
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system diagram, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
 
+Project maintenance files: [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [CITATION.cff](CITATION.cff).
+
 ## Reproduce Results
 
 Live old-skill vs new-skill comparison:
