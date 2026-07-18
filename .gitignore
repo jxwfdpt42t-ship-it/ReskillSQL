@@ -25,7 +25,8 @@ __pycache__/
 .deepagent_fs/
 agent_files/
 agent_workspace/
-/reports/
+/reports/*
+!/reports/README.md
 *.bak
 .pytest_cache/
 text2sql_deepagent.egg-info/
