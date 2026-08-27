@@ -105,7 +105,9 @@ benchmark
   generated transfer benchmark
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system diagram, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system diagram, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/BENCHMARK_PROTOCOL.md](docs/BENCHMARK_PROTOCOL.md) for the update/validation/holdout protocol, [docs/METRICS.md](docs/METRICS.md) for metric definitions, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
+
+Additional notes: [docs/FAQ.md](docs/FAQ.md), [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md), [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md), and [docs/INTERVIEW_GUIDE.zh.md](docs/INTERVIEW_GUIDE.zh.md).
 
 Project maintenance files: [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [CITATION.cff](CITATION.cff).
 
