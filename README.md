@@ -2,6 +2,8 @@
 
 SQL-aware and tool-aware Text-to-SQL agent that learns query-writing rules and tool-use policies from execution feedback.
 
+**Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Results](docs/EXPERIMENT_RESULTS.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
+
 ```text
 question -> SQL -> execute/judge -> failure attribution -> reskill -> live validation + replay diagnostics
 ```
