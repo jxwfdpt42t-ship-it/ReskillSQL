@@ -2,34 +2,29 @@
 
 ## System Overview
 
+The system has two coupled loops. The inner agent generates and executes SQL for a task. The outer evolver treats the resulting execution trajectories as evidence, proposes a bounded skill change, and promotes it only when the SQL-aware gate accepts the candidate.
+
 ```mermaid
-flowchart TB
-    Q[BIRD / user question] --> IR[Inner Text-to-SQL runner]
-    Skill[query-writing SKILL.md] --> IR
-    Schema[SQLite schema] --> IR
-    Evidence[BIRD evidence] --> IR
-    IR --> SQL[Predicted SQL]
-    SQL --> Checks[Compiled skill checks]
-    Skill --> Checks
-    Checks --> Tools{Tool policy enabled?}
-    Tools -->|Value Lookup Policy| VL[value_lookup: normalize stored literals]
-    Tools -->|Schema Context Policy| SC[schema_context: relevant table/column candidates]
-    VL --> FinalSQL[Final predicted SQL]
-    SC --> FinalSQL
-    Tools -->|No tool needed| FinalSQL
-    FinalSQL --> Judge[Read-only SQLite judge + timeout]
-    Gold[Gold SQL] --> Judge
-    Judge --> Result[Execution match / mismatch]
-    Result --> Analyzer[SQL-aware failure attribution]
-    Analyzer --> Route[Fix-route diagnosis]
-    Route --> Packet[Optimizer evidence packet]
-    Packet --> Patch[Candidate skill / tool-policy patch]
-    Patch --> Candidate[Candidate skill + diff]
-    Candidate --> Gate[SQL-aware validation gate]
-    Gate -->|accept| Version[Versioned best_skill]
-    Gate -->|reject| Reject[Rejected patch memory]
-    Version --> Skill
+flowchart LR
+    Q[Question + schema] --> IA[Inner SQL Agent]
+    IA --> SQL[Predicted SQL]
+    SQL --> J[Read-only SQLite judge + timeout]
+    J --> ET[Execution Trajectories]
+
+    subgraph Outer[Outer self-reskilling loop]
+        ET --> EV[SQL-aware Evolver]
+        EV --> CP[Candidate Skill Patch]
+        CP --> G[SQL-aware Gate]
+        G -->|accept| VS[Versioned Query-Writing Skill]
+        G -->|reject| RM[Regression memory / rejected patches]
+    end
+
+    VS --> IA
+    ET --> B[Self-Update Benchmark]
+    B --> G
 ```
+
+The benchmark is part of the control loop: `update` supplies failure evidence, `validation` informs promotion, and `holdout` checks transfer after acceptance. The implementation also applies compiled skill checks and tool policies between SQL generation and judging.
 
 ## Reskill Flow
 

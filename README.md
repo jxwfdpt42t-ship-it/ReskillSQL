@@ -1,14 +1,18 @@
-# Self-Reskilling Text-to-SQL Agent
+# ReskillSQL: A Self-Reskilling Text-to-SQL Agent
 
-SQL-aware and tool-aware Text-to-SQL agent that learns query-writing rules and tool-use policies from execution feedback.
+ReskillSQL is a SQL-aware, tool-aware Text-to-SQL agent that improves its external skills from SQL execution trajectories. It diagnoses why a generated query failed, produces a query-writing skill patch from the evidence, validates that patch with a SQL-aware gate, and promotes it as a versioned query-writing skill when the update is safe.
+
+The project changes versioned skills and tool-use policies—not model weights—and keeps the update process inspectable through candidate diffs, validation reports, regression memory, and replay/live benchmarks.
 
 **Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Results](docs/EXPERIMENT_RESULTS.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
 
 ```text
-question -> SQL -> execute/judge -> failure attribution -> reskill -> live validation + replay diagnostics
+question -> Inner SQL Agent -> execute/judge -> Execution Trajectories
+         -> SQL-aware Evolver -> Candidate Skill Patch -> SQL-aware Gate
+         -> Versioned Query-Writing Skill -> Inner SQL Agent
 ```
 
-Most Text-to-SQL demos stop after generating SQL. This project adds an outer self-reskilling loop: it diagnoses execution failures, decides whether the fix belongs in the query-writing skill or a tool-use policy, stages a candidate skill, and validates the update before treating it as the best agent behavior.
+In short: the inner agent solves Text-to-SQL tasks; the outer evolver turns recurring execution failures into testable, versioned behavior updates.
 
 ## Results
 
@@ -71,47 +75,79 @@ Example transformations:
 | Value grounding | `expense_date = '2019-8-20'` | `expense_date = '2019-08-20'` |
 | Ranking projection | `SELECT player_name, height ... ORDER BY height DESC LIMIT 1` | `SELECT player_name ... ORDER BY height DESC LIMIT 1` |
 
-## Why It Is Different
-
-- **SQL-aware attribution**: failures are localized to projection, result shape, aggregation, ordering, ratio/numeric, value grounding, schema linking, join path, filtering, or runtime behavior.
-- **Fix-route decisions**: the system separates `query_skill`, `value_lookup_tool`, `schema_context`, `inner_repair`, and `uncertain` instead of forcing every failure into one prompt.
-- **Tool-aware reskilling**: the agent learns when to use value lookup and schema context policies, not just how to phrase SQL instructions.
-- **Gate and rollback discipline**: candidate skills are evaluated with before/after accuracy, target category movement, regression checks, patch budget, versioning, and rejected-patch memory.
-- **Regression memory**: old-correct/new-wrong examples are stored as future protection cases so later updates can avoid repeating harmful patch effects.
-- **Execution safety**: SQLite is executed read-only with timeout protection so bad model SQL cannot hang the benchmark.
-
 ## Architecture
 
-```text
-inner runner
-  question + schema + skill
-  -> SQL generation
-  -> compiled skill checks
-  -> value lookup / schema context policies
-  -> predicted SQL
+The inner loop generates and judges SQL. The outer loop reads the resulting execution trajectories, attributes failures, proposes a candidate patch, and lets the gate decide whether a new version should become active.
 
-outer evolver
-  predicted SQL + gold SQL + execution result
-  -> SQL-aware failure attribution
-  -> fix_route diagnosis
-  -> optimizer evidence packet
-  -> candidate skill patch
-  -> validation gate
-  -> accept / reject / rollback / version
+```mermaid
+flowchart LR
+    Q[Question + schema] --> IA[Inner SQL Agent]
+    IA --> SQL[Predicted SQL]
+    SQL --> J[Read-only execution / judge]
+    J --> ET[Execution Trajectories]
 
-benchmark
-  live old-skill vs new-skill comparison
-  update replay
-  holdout replay
-  replay collection summary
-  generated transfer benchmark
+    subgraph OuterLoop[Outer self-reskilling loop]
+        ET --> EV[SQL-aware Evolver]
+        EV --> CP[Candidate Skill Patch]
+        CP --> G[SQL-aware Gate]
+        G -->|accept| VS[Versioned Query-Writing Skill]
+        G -->|reject| RM[Regression memory]
+    end
+
+    VS --> IA
+    ET --> SUB[Self-Update Benchmark]
+    SUB --> G
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full system diagram, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/BENCHMARK_PROTOCOL.md](docs/BENCHMARK_PROTOCOL.md) for the update/validation/holdout protocol, [docs/METRICS.md](docs/METRICS.md) for metric definitions, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
+This makes the feedback path explicit: execution is evidence, the evolver proposes a bounded change, and the gate controls promotion back into the inner agent.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the system diagram and runtime layers, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/BENCHMARK_PROTOCOL.md](docs/BENCHMARK_PROTOCOL.md) for the update/validation/holdout protocol, [docs/METRICS.md](docs/METRICS.md) for metric definitions, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
 
 Additional notes: [docs/FAQ.md](docs/FAQ.md), [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md), [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md), and [docs/INTERVIEW_GUIDE.zh.md](docs/INTERVIEW_GUIDE.zh.md).
 
 Project maintenance files: [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [CITATION.cff](CITATION.cff).
+
+## Project Structure
+
+```text
+text2sql_evolver/  # Runtime agent, failure analysis, patching, validation, memory, and benchmarks
+skills/            # Current and versioned query-writing/schema-exploration skills
+data/              # Local datasets and benchmark inputs; official/generated artifacts are not committed
+docs/              # Architecture, protocol, results, reproducibility, and project guides
+tests/             # Unit and integration tests for judging, policies, replay, and skill checks
+reports/           # Generated JSON/Markdown/HTML experiment reports
+```
+
+The most important boundary is between `text2sql_evolver/` (the implementation) and `skills/` (the external behavior that can be proposed, validated, versioned, and promoted).
+
+## Why Not Just Prompting?
+
+ReskillSQL uses prompts, but the update mechanism is more constrained than changing a prompt until one example looks better:
+
+- Skills have versions, so the active behavior and its history are explicit.
+- A patch carries execution evidence and a target failure category.
+- A SQL-aware gate checks the candidate before promotion, including improvement and regression signals.
+- Regression memory preserves old-correct/new-wrong cases as protection examples for later updates.
+- The self-update benchmark evaluates the update process and transfer to new examples, not only the final answer on the examples that caused the patch.
+
+This does not claim that every update is safe or that replay replaces live evaluation. It provides a testable control loop around skill changes.
+
+## Self-Update Benchmark
+
+The self-update benchmark separates the data used to create an update from the data used to accept and assess it:
+
+| Split | Role in the loop |
+|---|---|
+| `update` | Exposes recurring errors and supplies evidence for generating a candidate skill patch. |
+| `validation` | Gives the SQL-aware gate a separate set for deciding whether to accept the candidate. |
+| `holdout` | Remains unseen during patch creation and acceptance, then measures transfer to new tasks. |
+
+There are two evaluation modes:
+
+- **Replay** reuses stored trajectories and applies deterministic skill/tool policies. It is a cheaper diagnostic for debugging and broader historical slices.
+- **Live** makes the model reread the old or new skill and regenerate SQL from scratch. It is the stronger check that the changed skill text affects model behavior.
+
+The benchmark therefore asks two related questions: did the proposed skill update address the observed failure pattern, and does the accepted behavior transfer without excessive regressions? Existing results and their exact splits are listed in [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md).
 
 ## Reproduce Results
 

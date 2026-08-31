@@ -5,21 +5,26 @@ ReskillSQL separates two evaluation goals:
 1. Text-to-SQL execution accuracy.
 2. Whether skill updates transfer to future SQL tasks without excessive regressions.
 
-## Splits
+## Self-Update Lifecycle
 
-- `update`: examples used to expose recurring failure patterns and generate candidate skill updates.
-- `validation`: examples used by the gate to decide whether the candidate skill should be accepted.
-- `holdout`: unseen examples used only for final transfer reporting.
+The split boundaries reflect the order of a self-update, rather than only a conventional train/test split:
 
-The holdout split should not be used to write or select a skill patch.
+| Split | Purpose | Allowed use |
+|---|---|---|
+| `update` | Expose recurring errors and provide evidence for a candidate skill patch. | Failure attribution and patch generation. |
+| `validation` | Test whether the candidate improves the target behavior without unacceptable regressions. | SQL-aware gate and promotion decision. |
+| `holdout` | Measure whether the accepted behavior transfers to unseen tasks. | Final transfer reporting only. |
 
-## Live Evaluation
+The holdout split should not be used to write, tune, or select a skill patch. Keeping it out of the update and gate decisions is what makes it useful as a transfer check.
 
-Live evaluation asks the model to reread the old or new skill and regenerate SQL from scratch. This is the strongest evidence that the skill text changes behavior.
+## Live vs Replay
 
-## Replay Evaluation
+These modes answer different questions:
 
-Replay evaluation reuses stored trajectories and checks whether deterministic skill/tool policies would avoid known failures. It is cheaper and useful for debugging, but weaker than live evaluation.
+- **Live evaluation** asks the model to reread the old or new skill and regenerate SQL from scratch. It is the stronger evidence that the skill text changes model behavior.
+- **Replay evaluation** reuses stored execution trajectories and applies deterministic skill/tool policies to them. It is cheaper and useful for debugging or scanning broader historical slices, but it does not measure a fresh model generation.
+
+Replay is therefore a diagnostic signal, while live evaluation is the primary check for behavior changes caused by a skill update. The two modes should be reported separately rather than treated as interchangeable scores.
 
 ## Core Metrics
 
