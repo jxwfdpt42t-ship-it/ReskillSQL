@@ -87,6 +87,16 @@ def annotate_behavior_signals(runs: list[ExampleRun]) -> list[dict[str, Any]]:
             )
             continue
 
+        if run.correct and getattr(run, "outcome", "") == "repaired_success":
+            failed_attempt = next(a for a in run.attempts if a.get("correct") is False)
+            signals.append(BehaviorSignal(
+                example_id=str(run.example.id), outcome="success",
+                signal_type="repair_heavy_success", category=failed_attempt.get("category") or "syntax_or_runtime",
+                severity="medium", weight=0.6,
+                evidence=failed_attempt.get("analysis_evidence") or failed_attempt.get("reason") or "SQL repaired after a failed attempt.",
+                skill_fixable=True,
+            ))
+            continue
         risky = _risky_success_signals(run)
         signals.extend(risky)
         if not risky and run.correct:
@@ -114,6 +124,8 @@ def build_trajectory_cards(runs: list[ExampleRun], behavior_signals: list[dict[s
             continue
         category = str(signal.get("category") or "unknown")
         route, confidence, reason = _minimal_fix_route(run, category)
+        failed_attempt = next((a for a in getattr(run, "attempts", []) if a.get("correct") is False), None)
+        analyzed_sql = failed_attempt["sql"] if signal.get("signal_type") == "repair_heavy_success" and failed_attempt else run.predicted_sql
         cards.append(
             TrajectoryCard(
                 example_id=str(run.example.id),
@@ -123,8 +135,8 @@ def build_trajectory_cards(runs: list[ExampleRun], behavior_signals: list[dict[s
                 weight=float(signal.get("weight") or 0.0),
                 evidence=str(signal.get("evidence") or ""),
                 question=run.example.question,
-                relevant_sql_diff=_relevant_sql_diff(category, run.predicted_sql, run.example.gold_sql),
-                execution_signal=run.judge.reason,
+                relevant_sql_diff=_relevant_sql_diff(category, analyzed_sql, run.example.gold_sql),
+                execution_signal=failed_attempt["reason"] if signal.get("signal_type") == "repair_heavy_success" and failed_attempt else run.judge.reason,
                 bird_evidence=run.example.evidence,
                 tool_trace={"value_lookup_performed": False, "lookup_result": None},
                 fix_route=route,

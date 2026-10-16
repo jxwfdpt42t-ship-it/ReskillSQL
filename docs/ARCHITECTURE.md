@@ -2,29 +2,33 @@
 
 ## System Overview
 
-The system has two coupled loops. The inner agent generates and executes SQL for a task. The outer evolver treats the resulting execution trajectories as evidence, proposes a bounded skill change, and promotes it only when the SQL-aware gate accepts the candidate.
+The system has two coupled loops. The inner agent generates and executes SQL for a task. The outer evolver treats the resulting execution trajectories as evidence, proposes a bounded skill change, and promotes it only when the SQL-aware gate accepts the candidate. An optional experience-memory layer supplies retrieved evidence to either loop and learns utility only after the round is evaluated.
 
 ```mermaid
 flowchart LR
     Q[Question + schema] --> IA[Inner SQL Agent]
+    M[Experience memory] -->|retrieved evidence| IA
     IA --> SQL[Predicted SQL]
     SQL --> J[Read-only SQLite judge + timeout]
     J --> ET[Execution Trajectories]
 
     subgraph Outer[Outer self-reskilling loop]
         ET --> EV[SQL-aware Evolver]
+        M -->|retrieved evidence| EV
         EV --> CP[Candidate Skill Patch]
         CP --> G[SQL-aware Gate]
         G -->|accept| VS[Versioned Query-Writing Skill]
-        G -->|reject| RM[Regression memory / rejected patches]
+        G -->|reject| RP[Rejected patch evidence]
     end
 
     VS --> IA
+    ET --> M
+    G --> M
     ET --> B[Self-Update Benchmark]
     B --> G
 ```
 
-The benchmark is part of the control loop: `update` supplies failure evidence, `validation` informs promotion, and `holdout` checks transfer after acceptance. The implementation also applies compiled skill checks and tool policies between SQL generation and judging.
+The benchmark is part of the control loop: `update` supplies failure evidence, `validation` informs promotion, and `holdout` checks transfer after acceptance. Memory can learn only from update/validation sources; holdout evaluation opens a frozen store in read-only mode. The implementation also applies compiled skill checks and tool policies between SQL generation and judging.
 
 ## Reskill Flow
 
@@ -68,7 +72,8 @@ flowchart LR
 | Analyzer | `text2sql_evolver/sql_analyzer.py`, `analyzers/` | SQL-aware failure category and detector evidence |
 | Tool policies | `text2sql_evolver/tools/` | Value lookup and schema context behaviors controlled by skill policy |
 | Evolver | `text2sql_evolver/core/orchestrator.py` | Failure store, route diagnosis, patch generation, validation, reporting |
-| Skill memory | `skills/query-writing/`, `text2sql_evolver/memory/` | Candidate skill, best skill, version history, rejected patches |
+| Skill state | `skills/query-writing/`, `text2sql_evolver/memory/skill_versions.py` | Candidate skill, best skill, and version history |
+| Experience memory | `text2sql_evolver/memory/memrl.py`, `experience_store.py`, `round_learning.py` | SQL episodes, candidate-validation evidence, semantic recall, utility selection and feedback |
 | Benchmark | `text2sql_evolver/benchmarks/` | BIRD adapters, replay evaluation, update/holdout suite summary |
 
 ## Current Self-Update Suite

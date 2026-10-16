@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +16,17 @@ class ExampleRun:
     predicted_sql: str
     judge: JudgeResult
     analysis: FailureAnalysis | None
+    attempts: list[dict[str, Any]] = field(default_factory=list)
+    retrieved_memories: list[dict[str, Any]] = field(default_factory=list)
+
+    @property
+    def outcome(self) -> str:
+        if not self.correct:
+            return "failed"
+        final_index = max((i for i, a in enumerate(self.attempts) if a["sql"] == self.predicted_sql), default=-1)
+        if any(a.get("correct") is False for a in self.attempts[:final_index + 1]):
+            return "repaired_success"
+        return "direct_success" if self.attempts else "success_trace_unavailable"
 
     @property
     def correct(self) -> bool:
@@ -24,6 +35,7 @@ class ExampleRun:
     def to_report_row(self) -> dict[str, Any]:
         return {
             "id": self.example.id,
+            "source_id": self.example.source_id,
             "question": self.example.question,
             "gold_sql": self.example.gold_sql,
             "predicted_sql": self.predicted_sql,
@@ -37,6 +49,9 @@ class ExampleRun:
             "analysis_details": self.analysis.details if self.analysis else None,
             "predicted_rows": self.judge.predicted.rows[:10],
             "gold_rows": self.judge.gold.rows[:10],
+            "attempts": self.attempts,
+            "outcome": self.outcome,
+            "retrieved_memories": self.retrieved_memories,
         }
 
     def to_failure_row(self) -> dict[str, Any] | None:

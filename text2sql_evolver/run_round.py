@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+from dataclasses import replace
+from pathlib import Path
 
 from rich.console import Console
 from rich.table import Table
@@ -16,6 +18,7 @@ from .runners.cached_runner import CachedRunner
 from .runners.llm_runner import LLMRunner
 from .utils.io import load_prediction_jsonl
 from .utils.paths import resolve_dataset_path
+from .memory.memrl import make_memory
 
 
 console = Console()
@@ -29,19 +32,38 @@ def main() -> None:
     parser.add_argument("--apply-skill-patch", action="store_true", help="Write learned rules into skills/query-writing/SKILL.md.")
     parser.add_argument("--auto-apply", action="store_true", help="Automatically promote a candidate skill only after validation gate passes.")
     parser.add_argument("--max-skill-edits", type=int, default=3, help="Maximum learned-rule bullets accepted in one round.")
-    parser.add_argument("--validation-dataset", type=str, default=None, help="Optional holdout JSONL used to validate and auto-rollback skill patches.")
+    parser.add_argument("--validation-dataset", type=str, default=None, help="Development validation JSONL, never the final holdout.")
     parser.add_argument("--validation-limit", type=int, default=None, help="Number of validation examples to run.")
     parser.add_argument("--validation-min-delta", type=float, default=0.0, help="Minimum validation accuracy delta required to keep a patch.")
     parser.add_argument("--gate-min-score", type=int, default=4, help="Minimum SQL-aware scorecard points required to accept a candidate skill.")
     parser.add_argument("--require-target-improvement", action="store_true", help="Require target SQL error category count to decrease on validation.")
+    parser.add_argument("--memory-mode", choices=["off", "read", "learn"], default=None,
+                        help="MemRL: disabled, frozen retrieval, or learn after each round.")
+    parser.add_argument("--memory-path", type=Path, default=None)
+    parser.add_argument("--memory-embedding-model", default=None)
+    parser.add_argument("--memory-build", choices=["trajectory", "script", "proceduralization"], default=None)
+    parser.add_argument("--memory-optimizer-only", action="store_true",
+                        help="Retrieve only for skill updates, not for SQL generation.")
+    parser.add_argument("--dataset-role", choices=["update", "validation", "holdout"], default="update")
     args = parser.parse_args()
 
     settings = load_settings()
+    overrides = {key: getattr(args, key) for key in
+                 ("memory_mode", "memory_path", "memory_embedding_model", "memory_build")
+                 if getattr(args, key) is not None}
+    if args.memory_optimizer_only:
+        overrides["memory_inference"] = False
+    settings = replace(settings, **overrides)
+    if settings.memory_mode != "off" and args.predictions:
+        parser.error("MemRL integration requires live SQL attempts; omit --predictions (replay does not measure memory use)")
+    if args.dataset_role == "holdout":
+        parser.error("The evolve command selects patches; use a frozen evaluation runner for final holdout")
     dataset_path = resolve_dataset_path(settings.dataset_path, args.dataset)
     examples = load_jsonl(dataset_path, limit=args.limit)
     validation_path = resolve_dataset_path(settings.dataset_path, args.validation_dataset) if args.validation_dataset else None
     validation_examples = load_jsonl(validation_path, limit=args.validation_limit) if validation_path else None
-    llm_runner = LLMRunner(settings)
+    memory = make_memory(settings)
+    llm_runner = LLMRunner(settings, memory=memory)
     runner = CachedRunner(load_prediction_jsonl(args.predictions), fallback=llm_runner)
     orchestrator = EvolutionOrchestrator(
         settings=settings,
@@ -50,6 +72,7 @@ def main() -> None:
         patch_generator=SkillPatchGenerator(settings),
         patch_budget=PatchBudget(args.max_skill_edits),
         console=console,
+        memory=memory,
     )
     round_result = orchestrator.run(
         examples,
@@ -61,6 +84,7 @@ def main() -> None:
         validation_min_delta=args.validation_min_delta,
         gate_min_score=args.gate_min_score,
         require_target_improvement=args.require_target_improvement,
+        dataset_role=args.dataset_role,
     )
     _print_summary(round_result.summary, round_result.run_dir, bool(args.apply_skill_patch), round_result.skill_backup)
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
@@ -17,6 +17,8 @@ from text2sql_evolver.dataset import Example, load_jsonl
 from text2sql_evolver.inner_runner import generate_sql
 from text2sql_evolver.judge import JudgeResult, judge_sql
 from text2sql_evolver.memory.regression_memory import RegressionMemoryStore
+from text2sql_evolver.memory.memrl import make_memory, database_scope, source_keys
+from text2sql_evolver.runners.llm_runner import LLMRunner
 from text2sql_evolver.utils.paths import resolve_database_path, resolve_dataset_path
 
 
@@ -40,6 +42,10 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--output", type=Path, default=None, help="Optional JSON report path.")
     parser.add_argument("--max-retries", type=int, default=2, help="Retries for transient model/API failures.")
+    parser.add_argument("--memory-mode", choices=["off", "read"], default=None,
+                        help="Evaluation only supports frozen memory retrieval.")
+    parser.add_argument("--memory-path", type=Path, default=None)
+    parser.add_argument("--memory-embedding-model", default=None)
     parser.add_argument(
         "--regression-memory",
         type=Path,
@@ -49,6 +55,8 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = load_settings()
+    settings = replace(settings, **{key: getattr(args, key) for key in
+        ("memory_mode", "memory_path", "memory_embedding_model") if getattr(args, key) is not None})
     dataset_path = resolve_dataset_path(settings.dataset_path, args.dataset)
     output = args.output or _default_output_path(settings)
     result = compare_live_skills(
@@ -80,6 +88,17 @@ def compare_live_skills(
     max_retries: int = 2,
 ) -> dict[str, Any]:
     examples = load_jsonl(dataset_path, limit=limit)
+    if generator is None and settings.memory_mode != "off":
+        frozen_settings = replace(settings, memory_mode="read")
+        memory = make_memory(frozen_settings)
+        memory.context_skill = before_skill.read_text(encoding="utf-8")
+        memory.excluded_keys = set().union(*(
+            source_keys(ex.question, database_scope(resolve_database_path(ex.db_path, settings.database_path)),
+                        ex.id, ex.source_id) for ex in examples))
+
+        def generator(settings, example, database_path, skill_path):
+            return LLMRunner(replace(frozen_settings, query_skill_path=skill_path), memory=memory).generate(example, database_path)
+
     generator = generator or _generate_with_skill
     analyzer = SQLSpecializedAnalyzer()
     rows: list[dict[str, Any]] = []

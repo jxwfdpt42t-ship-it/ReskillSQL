@@ -1800,11 +1800,13 @@ dependencies = [
     { name = "langchain-community" },
     { name = "langchain-openai" },
     { name = "langgraph" },
+    { name = "numpy" },
     { name = "openai" },
     { name = "python-dotenv" },
     { name = "rich" },
     { name = "sqlalchemy" },
     { name = "tavily-python" },
+    { name = "tenacity" },
 ]
 
 [package.optional-dependencies]
@@ -1819,12 +1821,14 @@ requires-dist = [
     { name = "langchain-community", specifier = ">=0.3.0" },
     { name = "langchain-openai", specifier = ">=1.0.0" },
     { name = "langgraph", specifier = ">=1.0.6" },
+    { name = "numpy", specifier = ">=1.24.0" },
     { name = "openai", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "rich", specifier = ">=13.0.0" },
     { name = "sqlalchemy", specifier = ">=2.0.0" },
     { name = "tavily-python", specifier = ">=0.5.0" },
+    { name = "tenacity", specifier = ">=8.0.0" },
 ]
 provides-extras = ["dev"]
 

@@ -20,6 +20,27 @@ class Settings:
     api_key: str
     base_url: str
     query_skill_path: Path
+    memory_mode: str = "off"
+    memory_path: Path | None = None
+    memory_embedding_model: str = ""
+    memory_embedding_base_url: str = ""
+    memory_build: str = "proceduralization"
+    memory_inference: bool = True
+    memory_alpha: float = 0.1
+    memory_similarity_threshold: float = 0.5
+    memory_candidates: int = 10
+    memory_top_k: int = 3
+    memory_context_chars: int = 6000
+
+    def __post_init__(self):
+        if self.memory_mode not in {"off", "read", "learn"}:
+            raise ValueError("memory_mode must be off, read or learn")
+        if self.memory_build not in {"trajectory", "script", "proceduralization"}:
+            raise ValueError("Invalid memory_build strategy")
+        if not 0 < self.memory_alpha <= 1 or not -1 <= self.memory_similarity_threshold <= 1:
+            raise ValueError("Invalid memory alpha/similarity threshold")
+        if not 1 <= self.memory_top_k <= self.memory_candidates or self.memory_context_chars < 256:
+            raise ValueError("Invalid memory retrieval budget")
 
 
 def load_settings() -> Settings:
@@ -53,4 +74,10 @@ def load_settings() -> Settings:
         api_key=api_key,
         base_url=base_url.rstrip("/"),
         query_skill_path=PROJECT_ROOT / "skills" / "query-writing" / "SKILL.md",
+        memory_mode=os.getenv("TEXT2SQL_MEMORY_MODE", "off"),
+        memory_path=Path(os.getenv("TEXT2SQL_MEMORY_PATH", PROJECT_ROOT / "data/memrl/experiences.sqlite")).resolve(),
+        memory_embedding_model=os.getenv("TEXT2SQL_MEMORY_EMBEDDING_MODEL", ""),
+        memory_embedding_base_url=os.getenv("TEXT2SQL_MEMORY_EMBEDDING_BASE_URL", ""),
+        memory_build=os.getenv("TEXT2SQL_MEMORY_BUILD", "proceduralization"),
+        memory_inference=os.getenv("TEXT2SQL_MEMORY_INFERENCE", "1") == "1",
     )

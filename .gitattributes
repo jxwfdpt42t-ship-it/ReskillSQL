@@ -1,0 +1,2 @@
+# Preserve upstream source formatting while keeping repository whitespace checks useful.
+text2sql_evolver/_vendor/memrl/** whitespace=-trailing-space,-blank-at-eof

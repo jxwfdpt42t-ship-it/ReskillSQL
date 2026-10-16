@@ -17,6 +17,8 @@ The split boundaries reflect the order of a self-update, rather than only a conv
 
 The holdout split should not be used to write, tune, or select a skill patch. Keeping it out of the update and gate decisions is what makes it useful as a transfer check.
 
+When experience memory is enabled, the same boundary applies to memory state. Update and validation examples may create entries and utility feedback. Holdout evaluation must use `memory_mode=read`, exclude the current task and its stable source ancestry from retrieval, and leave both the store and Q values unchanged.
+
 ## Live vs Replay
 
 These modes answer different questions:
@@ -34,3 +36,5 @@ Replay is therefore a diagnostic signal, while live evaluation is the primary ch
 - Failure Avoidance Rate.
 - Skill length and patch budget.
 - Estimated model calls and token cost.
+
+Memory experiments should additionally report retrieval coverage, injected-memory count, utility-selection policy, memory size, and the incremental model/embedding cost. Skill-only, memory-only, and combined results must use isolated state directories rather than sharing a mutable Skill file or memory database.

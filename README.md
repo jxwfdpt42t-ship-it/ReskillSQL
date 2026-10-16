@@ -1,10 +1,12 @@
 # ReskillSQL: A Self-Reskilling Text-to-SQL Agent
 
-ReskillSQL is a SQL-aware, tool-aware Text-to-SQL agent that improves its external skills from SQL execution trajectories. It diagnoses why a generated query failed, produces a query-writing skill patch from the evidence, validates that patch with a SQL-aware gate, and promotes it as a versioned query-writing skill when the update is safe.
+ReskillSQL is a SQL-aware, tool-aware Text-to-SQL agent that improves its external skills from SQL execution trajectories. It diagnoses why a generated query failed, produces a query-writing skill patch from the evidence, validates that patch with a SQL-aware gate, and promotes it as a versioned query-writing skill when the gate accepts the update.
 
 The project changes versioned skills and tool-use policies—not model weights—and keeps the update process inspectable through candidate diffs, validation reports, regression memory, and replay/live benchmarks.
 
-**Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Results](docs/EXPERIMENT_RESULTS.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
+**Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Experience Memory](docs/MEMORY.md) · [Results](docs/EXPERIMENT_RESULTS.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
+
+Optional MemRL-style experience memory is now available for the evolver: persist SQL attempts and rejected-skill validation evidence, retrieve by semantic relevance and learned utility, and update memory values from task feedback. The integration reuses a pinned, MIT-licensed subset of MemRL and records its exact provenance. See [Experience Memory](docs/MEMORY.md) or the [Chinese implementation notes](docs/MEMRL_MEMORY.zh.md). Memory is off by default; no new accuracy result is claimed. Runtime skill loading now preserves the actual learned rules, so the historical scores below describe the earlier implementation and must be re-baselined before evaluating memory.
 
 ```text
 question -> Inner SQL Agent -> execute/judge -> Execution Trajectories
@@ -33,7 +35,7 @@ Self-update transfer benchmark 2.0 now builds a 500-question category-conditione
 |---|---:|---:|---:|---:|---:|
 | Generated transfer 500 | 500 | 498/500 | 200 | 150 | 150 |
 
-Self-update benchmark evaluates multi-round skill evolution, not only final SQL accuracy. The same 500 questions are also split into three category-balanced rounds:
+The same 500 questions are also split into three category-balanced diagnostic rounds:
 
 | Round | Total | Update | Validation | Holdout | Validated |
 |---|---:|---:|---:|---:|---:|
@@ -41,7 +43,7 @@ Self-update benchmark evaluates multi-round skill evolution, not only final SQL 
 | round_2 | 166 | 67 | 50 | 49 | 164 |
 | round_3 | 164 | 65 | 50 | 49 | 164 |
 
-Full three-round live evaluation over all validation/holdout rows: `174/300 -> 180/300` (`+2.00%`), failure avoidance rate `19.05%`, regressions `18`. Holdout improved in all three rounds.
+Fixed-version live comparison over all three validation/holdout slices: `174/300 -> 180/300` (`+2.00%`), failure avoidance rate `19.05%`, regressions `18`. These reports compare the same old and new Skill on each slice; they do **not** constitute a sequential `S0 -> S1 -> S2 -> S3` learning result.
 
 The current live-safe skill is `skills/query-writing/versions/query-writing-v0010-live-safe.md`.
 
@@ -75,26 +77,78 @@ Example transformations:
 | Value grounding | `expense_date = '2019-8-20'` | `expense_date = '2019-08-20'` |
 | Ranking projection | `SELECT player_name, height ... ORDER BY height DESC LIMIT 1` | `SELECT player_name ... ORDER BY height DESC LIMIT 1` |
 
+## Why It Is Different
+
+- **SQL-aware attribution**: failures are localized to projection, result shape, aggregation, ordering, ratio/numeric, value grounding, schema linking, join path, filtering, or runtime behavior.
+- **Fix-route decisions**: the system separates `query_skill`, `value_lookup_tool`, `schema_context`, `inner_repair`, and `uncertain` instead of forcing every failure into one prompt.
+- **Tool-aware reskilling**: the agent learns when to use value lookup and schema context policies, not just how to phrase SQL instructions.
+- **Gate and rollback discipline**: candidate skills are evaluated with before/after accuracy, target category movement, regression checks, patch budget, versioning, and rejected-patch memory.
+- **Regression evidence**: old-correct/new-wrong examples are recorded for diagnosis and future protection experiments; the legacy records are not automatically imported into every promotion gate.
+- **Execution safety**: SQLite is executed read-only with timeout protection so bad model SQL cannot hang the benchmark.
+- **Experience memory**: optional SQL episodes and Skill-validation outcomes are persisted, retrieved by semantic similarity and learned utility, and updated only after a frozen evaluation round.
+
+## Experience Memory
+
+Memory augments the outer reskilling loop without changing model weights. A memory entry keeps its source intent, a reusable experience summary, structured provenance, and utility estimates. The current implementation uses the following lifecycle:
+
+1. Retrieve candidates from the same database and schema scope by embedding similarity.
+2. Select a bounded context with MemRL's value-aware selector.
+3. Inject only the selected evidence into SQL generation or Skill optimization.
+4. Finish the task or candidate-Skill validation before writing new experience.
+5. Update the utility of memories that were actually injected, using task or gate feedback.
+
+Both accepted and rejected Skill candidates may produce evidence. A rejected patch is stored as a failed generalization attempt, while an individual validation case may still be retained as a local improvement or counterexample. Historical failures are evidence, not executable instructions.
+
+The implementation enforces source-ID exclusion, update/validation-only learning, read-only final evaluation, schema-scoped retrieval, idempotent feedback events, and separate inference/optimizer utility contexts. It does not claim exact reproduction of the MemRL paper: this project reuses the upstream Q-first selector after cosine recall rather than the paper's normalized similarity/Q mixture.
+
+```bash
+# Required only when memory is enabled. Use an embeddings-compatible endpoint.
+export TEXT2SQL_MEMORY_EMBEDDING_MODEL='<embedding-model>'
+export TEXT2SQL_MEMORY_EMBEDDING_BASE_URL='<embedding-endpoint>'
+export TEXT2SQL_MEMORY_EMBEDDING_API_KEY='<embedding-key>'
+
+# Learn from update and validation data.
+uv run text2sql-evolve \
+  --dataset data/update.jsonl \
+  --validation-dataset data/validation.jsonl \
+  --dataset-role update \
+  --memory-mode learn \
+  --memory-build proceduralization
+
+# Freeze memory during final evaluation.
+uv run text2sql-live-skill-compare \
+  --dataset data/final_holdout.jsonl \
+  --before-skill skills/query-writing/versions/query-writing-v0002.md \
+  --after-skill skills/query-writing/SKILL.md \
+  --memory-mode read
+```
+
+Memory databases, raw provider logs, and API credentials are local artifacts and are not committed. See [docs/MEMORY.md](docs/MEMORY.md) for configuration, provenance, isolation guarantees, and current limitations.
+
 ## Architecture
 
-The inner loop generates and judges SQL. The outer loop reads the resulting execution trajectories, attributes failures, proposes a candidate patch, and lets the gate decide whether a new version should become active.
+The inner loop generates and judges SQL. The outer loop reads the resulting execution trajectories, attributes failures, proposes a candidate patch, and lets the gate decide whether a new version should become active. Optional experience memory supports both loops without modifying model weights.
 
 ```mermaid
 flowchart LR
     Q[Question + schema] --> IA[Inner SQL Agent]
+    M[Experience Memory] -->|relevant evidence| IA
     IA --> SQL[Predicted SQL]
     SQL --> J[Read-only execution / judge]
     J --> ET[Execution Trajectories]
 
     subgraph OuterLoop[Outer self-reskilling loop]
         ET --> EV[SQL-aware Evolver]
+        M -->|relevant evidence| EV
         EV --> CP[Candidate Skill Patch]
         CP --> G[SQL-aware Gate]
         G -->|accept| VS[Versioned Query-Writing Skill]
-        G -->|reject| RM[Regression memory]
+        G -->|reject| RP[Rejected patch evidence]
     end
 
     VS --> IA
+    ET --> M
+    G --> M
     ET --> SUB[Self-Update Benchmark]
     SUB --> G
 ```
@@ -127,7 +181,7 @@ ReskillSQL uses prompts, but the update mechanism is more constrained than chang
 - Skills have versions, so the active behavior and its history are explicit.
 - A patch carries execution evidence and a target failure category.
 - A SQL-aware gate checks the candidate before promotion, including improvement and regression signals.
-- Regression memory preserves old-correct/new-wrong cases as protection examples for later updates.
+- Regression evidence preserves old-correct/new-wrong cases for diagnosis and future protection experiments.
 - The self-update benchmark evaluates the update process and transfer to new examples, not only the final answer on the examples that caused the patch.
 
 This does not claim that every update is safe or that replay replaces live evaluation. It provides a testable control loop around skill changes.

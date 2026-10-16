@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/MemTensor/MemRL",
+  "commit": "c1b322ca43de36ddf64c6712f89d0095bfc35ce0",
+  "sha256": {
+    "service/value_driven.py": "994a27154e78bdfdad07018b795c22c68e26ad30a41c67da7276c75cd85f563b",
+    "service/builders.py": "aa54c44f5ec0bd4142aac627de6b73bda8e322f0b03cb078632c1dfb3698cfe6",
+    "service/strategies.py": "4a25a6dca86b27df9b9fe8e50d02468c650f98a16a89113d47826064bd327deb",
+    "providers/base.py": "4af72e20da724c3e7c4bb7f4081a341acc7494e73992cd92a258c3c68acce31d",
+    "providers/embedding.py": "ff90545baa0b2434a4f788d99c735424845b120a3cf9e4e80fd56af07c818a73"
+  },
+  "modifications": {
+    "service/value_driven.py": "MOS import moved under TYPE_CHECKING; algorithms unchanged."
+  }
+}

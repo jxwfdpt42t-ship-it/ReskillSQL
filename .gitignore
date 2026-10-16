@@ -29,6 +29,7 @@ agent_workspace/
 !/reports/README.md
 *.bak
 .pytest_cache/
+/data/memrl/
 text2sql_deepagent.egg-info/
 self_evolving_text2sql.egg-info/
 

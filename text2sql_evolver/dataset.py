@@ -15,6 +15,7 @@ class Example:
     db_id: str | None = None
     evidence: str | None = None
     difficulty: str | None = None
+    source_id: str | None = None
 
 
 def load_jsonl(path: Path, limit: int | None = None) -> list[Example]:
@@ -34,6 +35,7 @@ def load_jsonl(path: Path, limit: int | None = None) -> list[Example]:
                     db_id=row.get("db_id"),
                     evidence=row.get("evidence"),
                     difficulty=row.get("difficulty"),
+                    source_id=str(row["source_id"]) if row.get("source_id") is not None else None,
                 )
             )
             if limit and len(examples) >= limit:

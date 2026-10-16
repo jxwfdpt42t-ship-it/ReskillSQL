@@ -51,6 +51,7 @@ class ValidationRunner:
             runs.append(
                 {
                     "id": example.id,
+                    "source_id": example.source_id,
                     "question": example.question,
                     "db_path": str(database_path),
                     "predicted_sql": predicted_sql,
