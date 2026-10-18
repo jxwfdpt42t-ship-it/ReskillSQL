@@ -64,6 +64,6 @@ def test_render_showcase_report_contains_core_metrics():
     html = render_showcase_report(live=live, replay=replay, ablation=ablation)
 
     assert "Self-Reskilling Text-to-SQL Agent" in html
-    assert "Live BIRD 100" in html
+    assert "Live Comparison" in html
     assert "full_system" in html
     assert "SELECT name FROM t" in html

@@ -28,9 +28,6 @@ ReskillSQL 是一个面向 Text-to-SQL 的自我更新 Agent：内层负责写 S
 - regression memory 如何避免新 skill 伤害旧样本。
 - self-update benchmark 为什么看的是“更新过程”，不是只看最终准确率。
 
-## 结果
+## 实验状态
 
-- BIRD MiniDev live 100：58.00% -> 67.00%。
-- 500-example replay：46.40% -> 51.40%。
-- Generated transfer holdout：50.00% -> 54.67%。
-- Multi-round live：58.00% -> 60.00%，FAR 19.05%。
+当前仓库公开实现、评测协议和复现实验入口，不公开正式效果数字。最终结论将在 BIRD 派生 benchmark、Gemini 2.5 Flash 配置、Skill/Memory 2×2 对照和 holdout 协议冻结后统一报告。

@@ -73,7 +73,6 @@ def main() -> None:
         ]
         _print_intro()
         _print_cases(cases)
-        _print_results()
 
 
 def _make_value_lookup_db(path: Path) -> Path:
@@ -109,21 +108,6 @@ def _print_cases(cases: list[DemoCase]) -> None:
         )
         table.add_row(case.name, case.category, case.question, case.before_sql, after_sql)
     console.print(table)
-
-
-def _print_results() -> None:
-    table = Table(title="Current Evaluation Results")
-    table.add_column("Split")
-    table.add_column("Before")
-    table.add_column("After")
-    table.add_column("Delta")
-    table.add_column("Regressions")
-    table.add_row("live BIRD 100", "58/100 (58.00%)", "67/100 (67.00%)", "+9.00%", "3")
-    table.add_row("update replay", "53/100 (53.00%)", "59/100 (59.00%)", "+6.00%", "0")
-    table.add_row("holdout replay", "20/50 (40.00%)", "22/50 (44.00%)", "+4.00%", "0")
-    table.add_row("500-example collection", "232/500 (46.40%)", "257/500 (51.40%)", "+5.00%", "6")
-    console.print(table)
-
 
 if __name__ == "__main__":
     main()

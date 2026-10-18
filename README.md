@@ -4,9 +4,9 @@ ReskillSQL is a SQL-aware, tool-aware Text-to-SQL agent that improves its extern
 
 The project changes versioned skills and tool-use policies—not model weights—and keeps the update process inspectable through candidate diffs, validation reports, regression memory, and replay/live benchmarks.
 
-**Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Experience Memory](docs/MEMORY.md) · [Results](docs/EXPERIMENT_RESULTS.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
+**Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Experience Memory](docs/MEMORY.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
 
-Optional MemRL-style experience memory is now available for the evolver: persist SQL attempts and rejected-skill validation evidence, retrieve by semantic relevance and learned utility, and update memory values from task feedback. The integration reuses a pinned, MIT-licensed subset of MemRL and records its exact provenance. See [Experience Memory](docs/MEMORY.md) or the [Chinese implementation notes](docs/MEMRL_MEMORY.zh.md). Memory is off by default; no new accuracy result is claimed. Runtime skill loading now preserves the actual learned rules, so the historical scores below describe the earlier implementation and must be re-baselined before evaluating memory.
+Optional MemRL-style experience memory is available for the evolver: it persists SQL attempts and rejected-Skill validation evidence, retrieves by semantic relevance and learned utility, and updates memory values from task feedback. The integration reuses a pinned, MIT-licensed subset of MemRL and records its exact provenance. See [Experience Memory](docs/MEMORY.md) or the [Chinese implementation notes](docs/MEMRL_MEMORY.zh.md). Memory is off by default.
 
 ```text
 question -> Inner SQL Agent -> execute/judge -> Execution Trajectories
@@ -16,45 +16,11 @@ question -> Inner SQL Agent -> execute/judge -> Execution Trajectories
 
 In short: the inner agent solves Text-to-SQL tasks; the outer evolver turns recurring execution failures into testable, versioned behavior updates.
 
-## Results
+## Evaluation Status
 
-The primary closed-loop result is a live old-skill vs new-skill run: the inner runner reads each skill and regenerates SQL from scratch on the same BIRD MiniDev slice. Replay results are reported as an auxiliary diagnostic for historical trajectories.
+This repository publishes the implementation, benchmark builders, evaluation runners, configuration, and tests. It does not publish an official accuracy table or commit provider-specific result artifacts. Generated reports remain local under `reports/` and are ignored by Git, following the same code-first release pattern used by MemRL.
 
-| Split | Before | After | Delta | Regressions | Improved Categories |
-|---|---:|---:|---:|---:|---|
-| Live BIRD 100 old-skill vs new-skill | 58/100 | 67/100 | +9.00% | 3 | ordering_limit, value_grounding, aggregation, projection, schema_linking |
-| Generated transfer validation live | 78/149 | 81/149 | +2.01% | 9 | filtering, projection, value_grounding, schema_linking |
-| Generated transfer holdout live | 75/150 | 82/150 | +4.67% | 7 | value_grounding, aggregation, projection |
-| Update replay | 53/100 | 59/100 | +6.00% | 0 | projection, aggregation, value_grounding |
-| Holdout replay | 20/50 | 22/50 | +4.00% | 0 | projection |
-| 500-example BIRD replay collection | 232/500 | 257/500 | +5.00% | 6 | projection, value_grounding, schema_linking, ratio_numeric, aggregation, join_path |
-
-Self-update transfer benchmark 2.0 now builds a 500-question category-conditioned benchmark from BIRD MiniDev:
-
-| Benchmark Asset | Total | Gold SQL Validated | Update | Validation | Holdout |
-|---|---:|---:|---:|---:|---:|
-| Generated transfer 500 | 500 | 498/500 | 200 | 150 | 150 |
-
-The same 500 questions are also split into three category-balanced diagnostic rounds:
-
-| Round | Total | Update | Validation | Holdout | Validated |
-|---|---:|---:|---:|---:|---:|
-| round_1 | 170 | 68 | 50 | 52 | 170 |
-| round_2 | 166 | 67 | 50 | 49 | 164 |
-| round_3 | 164 | 65 | 50 | 49 | 164 |
-
-Fixed-version live comparison over all three validation/holdout slices: `174/300 -> 180/300` (`+2.00%`), failure avoidance rate `19.05%`, regressions `18`. These reports compare the same old and new Skill on each slice; they do **not** constitute a sequential `S0 -> S1 -> S2 -> S3` learning result.
-
-The current live-safe skill is `skills/query-writing/versions/query-writing-v0010-live-safe.md`.
-
-Lightweight replay ablation on the 100-example replay slice:
-
-| Variant | Before | After | Delta | Regressions |
-|---|---:|---:|---:|---:|
-| no_reskill | 53/100 | 53/100 | +0.00% | 0 |
-| query_skill_checks_only | 53/100 | 58/100 | +5.00% | 0 |
-| value_lookup_only | 53/100 | 54/100 | +1.00% | 0 |
-| full_system | 53/100 | 59/100 | +6.00% | 0 |
+The planned primary evaluation uses a fixed Gemini 2.5 Flash backbone on a BIRD-derived self-update benchmark. It separates `update`, `validation`, and frozen `holdout` data and compares Skill updating and experience memory in a 2×2 design. Results will be reported only after the benchmark, code revision, model configuration, and evaluation protocol are frozen.
 
 ## Quick Demo
 
@@ -155,7 +121,7 @@ flowchart LR
 
 This makes the feedback path explicit: execution is evidence, the evolver proposes a bounded change, and the gate controls promotion back into the inner agent.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the system diagram and runtime layers, [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md) for experiment details, [docs/BENCHMARK_PROTOCOL.md](docs/BENCHMARK_PROTOCOL.md) for the update/validation/holdout protocol, [docs/METRICS.md](docs/METRICS.md) for metric definitions, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the system diagram and runtime layers, [docs/BENCHMARK_PROTOCOL.md](docs/BENCHMARK_PROTOCOL.md) for the update/validation/holdout protocol, [docs/METRICS.md](docs/METRICS.md) for metric definitions, [docs/CASE_STUDIES.md](docs/CASE_STUDIES.md) for representative fixes, and [docs/QUICKSTART.md](docs/QUICKSTART.md) for a compact setup guide.
 
 Additional notes: [docs/FAQ.md](docs/FAQ.md), [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md), [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md), and [docs/INTERVIEW_GUIDE.zh.md](docs/INTERVIEW_GUIDE.zh.md).
 
@@ -167,7 +133,7 @@ Project maintenance files: [CHANGELOG.md](CHANGELOG.md), [CONTRIBUTING.md](CONTR
 text2sql_evolver/  # Runtime agent, failure analysis, patching, validation, memory, and benchmarks
 skills/            # Current and versioned query-writing/schema-exploration skills
 data/              # Local datasets and benchmark inputs; official/generated artifacts are not committed
-docs/              # Architecture, protocol, results, reproducibility, and project guides
+docs/              # Architecture, protocol, reproducibility, and project guides
 tests/             # Unit and integration tests for judging, policies, replay, and skill checks
 reports/           # Generated JSON/Markdown/HTML experiment reports
 ```
@@ -201,11 +167,11 @@ There are two evaluation modes:
 - **Replay** reuses stored trajectories and applies deterministic skill/tool policies. It is a cheaper diagnostic for debugging and broader historical slices.
 - **Live** makes the model reread the old or new skill and regenerate SQL from scratch. It is the stronger check that the changed skill text affects model behavior.
 
-The benchmark therefore asks two related questions: did the proposed skill update address the observed failure pattern, and does the accepted behavior transfer without excessive regressions? Existing results and their exact splits are listed in [docs/EXPERIMENT_RESULTS.md](docs/EXPERIMENT_RESULTS.md).
+The benchmark therefore asks two related questions: did the proposed Skill update address the observed failure pattern, and does the accepted behavior transfer without excessive regressions? The protocol is defined before any final holdout result is inspected.
 
-## Reproduce Results
+## Running Benchmarks
 
-Live old-skill vs new-skill comparison:
+Live old-Skill vs new-Skill comparison generates a local report:
 
 ```bash
 uv run text2sql-live-skill-compare \
@@ -213,10 +179,10 @@ uv run text2sql-live-skill-compare \
   --before-skill skills/query-writing/versions/query-writing-v0002.md \
   --after-skill skills/query-writing/SKILL.md \
   --limit 100 \
-  --output reports/live_skill_compare_bird100_v0002_vs_v0010_live_safe_20260712.json
+  --output reports/live_skill_compare.json
 ```
 
-The official BIRD data and generated reports are local artifacts and are not committed. After preparing BIRD MiniDev under `data/bird/`, the replay commands are:
+The official BIRD data and generated reports are local artifacts and are not committed. After preparing BIRD data under `data/bird/`, the replay commands are:
 
 ```bash
 uv run text2sql-evaluate-skill-replay \
@@ -367,26 +333,18 @@ self-evolving-text2sql/
 │   └── reports/                      # JSON/Markdown report writers
 ├── docs/
 │   ├── ARCHITECTURE.md               # system and reskill flow diagrams
-│   ├── EXPERIMENT_RESULTS.md         # update/holdout replay results
+│   ├── MEMORY.md                     # experience-memory design and isolation
 │   ├── CASE_STUDIES.md               # concrete before/after SQL cases
 │   ├── QUICKSTART.md                  # setup and reproduction guide
 │   └── SYSTEM_WALKTHROUGH.md         # code-level walkthrough
 └── tests/                            # judge, tool policy, replay, skill checks
 ```
 
-## Resume Pitch
-
-Built a SQL-aware and tool-aware self-reskilling Text-to-SQL agent that diagnoses execution failures, routes them to query-writing or tool-use policy updates, and validates candidate skills with live and replay evaluation. Implemented value lookup, runtime skill compilation, conservative SQL repair retry, SQLite timeout-safe judge, skill versioning, rejected patch memory, SQL-aware gate, and BIRD tooling; improved a live BIRD MiniDev slice from 58% to 67% execution accuracy and a 500-example replay collection from 46.4% to 51.4%.
-
-Built a 500-question generated self-update transfer benchmark with update/validation/holdout splits and 498/500 executable gold SQL; on validated live transfer checks, the reskilled agent improved validation accuracy from 52.35% to 54.36% and holdout accuracy from 50.00% to 54.67%.
-
-Added regression memory over the generated transfer runs: 16 old-correct/new-wrong cases are persisted as future protection examples for stricter self-update gates.
-
 ## Limitations
 
-- The live result is currently a 100-example slice; larger live reruns are slower because they require two model calls per example.
-- The 500-example replay is broader, but replay should not be reported as a full live BIRD benchmark score.
-- One replay slice regressed from 78% to 74%, so tool policies still need stricter promotion gates for high-baseline slices.
+- Provider-backed evaluation is intentionally not published in the repository at this stage.
+- Replay is a diagnostic mode and should not be reported as equivalent to fresh live generation.
+- The BIRD-derived self-update benchmark is under active development and is not an official BIRD leaderboard split.
 - Value lookup is intentionally conservative to avoid regressions; it mainly fixes high-confidence literal formatting and stored-value normalization.
 - This project does not update model weights. It updates external skills, tool-use policies, and compiled checks.
 

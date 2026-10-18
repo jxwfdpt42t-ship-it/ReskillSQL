@@ -2,6 +2,6 @@
 
 Generated experiment reports are written here during local runs.
 
-Most report files are intentionally ignored because they can be large, provider-specific, or tied to local benchmark data. The README and documentation summarize the public numbers needed to understand the project.
+Report files are intentionally ignored because they can be large, provider-specific, tied to local benchmark data, or contain execution traces. The public repository does not publish an official result table at this stage.
 
-To regenerate reports, follow the commands in `README.md` and `docs/EXPERIMENT_RESULTS.md`.
+To generate local reports, follow the benchmark commands in `README.md` and the evaluation protocol in `docs/BENCHMARK_PROTOCOL.md`.

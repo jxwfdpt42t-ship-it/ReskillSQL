@@ -17,17 +17,17 @@ def main() -> None:
     parser.add_argument(
         "--live",
         type=Path,
-        default=Path("reports/live_skill_compare_bird100_v0002_vs_v0010_live_safe_20260712.json"),
+        default=Path("reports/live_skill_compare.json"),
     )
     parser.add_argument(
         "--replay",
         type=Path,
-        default=Path("reports/self_update_replay_collection_500_20260709.json"),
+        default=Path("reports/replay_collection.json"),
     )
     parser.add_argument(
         "--ablation",
         type=Path,
-        default=Path("reports/replay_ablation_bird100_20260712.json"),
+        default=Path("reports/replay_ablation.json"),
     )
     parser.add_argument("--output", type=Path, default=Path("reports/showcase/index.html"))
     args = parser.parse_args()
@@ -197,10 +197,10 @@ def render_showcase_report(*, live: dict[str, Any], replay: dict[str, Any], abla
     <h1>Self-Reskilling Text-to-SQL Agent</h1>
     <p class="lede">A SQL-aware agent loop that turns execution feedback into versioned query-writing skills and tool policies, then validates the new behavior with live and replay benchmarks.</p>
     <div class="metric-grid">
-      {metric_card("Live BIRD 100", f"{live['before_correct']}/{live['total']} -> {live['after_correct']}/{live['total']}", f"{live['accuracy_delta']:+.1%}", "positive")}
+      {metric_card("Live Comparison", f"{live['before_correct']}/{live['total']} -> {live['after_correct']}/{live['total']}", f"{live['accuracy_delta']:+.1%}", "positive")}
       {metric_card("Replay Collection", f"{replay['before_correct']}/{replay['total']} -> {replay['after_correct']}/{replay['total']}", f"{replay['accuracy_delta']:+.1%}", "positive")}
       {metric_card("Live Fixes / Regressions", f"{live['improvement_total']} / {live['regression_total']}", "bounded regression", "gold")}
-      {metric_card("Tested Modules", "39 tests", "judge, replay, live, ablation", "blue")}
+      {metric_card("Report Inputs", "live / replay / ablation", "generated from local artifacts", "blue")}
     </div>
   </header>
   <main>

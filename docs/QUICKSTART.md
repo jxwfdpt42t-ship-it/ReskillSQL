@@ -12,7 +12,7 @@ uv sync --extra dev
 uv run text2sql-demo
 ```
 
-This command does not call an LLM API. It demonstrates reusable SQL rewrites and prints the current live/replay benchmark numbers.
+This command does not call an LLM API. It demonstrates reusable SQL rewrites without publishing benchmark claims.
 
 ## Render the Showcase Report
 
@@ -21,7 +21,7 @@ uv run text2sql-render-report
 open reports/showcase/index.html
 ```
 
-## Reproduce the Main Live Result
+## Run a Live Skill Comparison
 
 This command calls the configured model API.
 
@@ -31,10 +31,10 @@ uv run text2sql-live-skill-compare \
   --before-skill skills/query-writing/versions/query-writing-v0002.md \
   --after-skill skills/query-writing/SKILL.md \
   --limit 100 \
-  --output reports/live_skill_compare_bird100_v0002_vs_v0010_live_safe_20260712.json
+  --output reports/live_skill_compare.json
 ```
 
-## Run the Lightweight Ablation
+## Run a Local Replay Ablation
 
 ```bash
 uv run text2sql-replay-ablation \

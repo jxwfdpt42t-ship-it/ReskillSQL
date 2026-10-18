@@ -6,7 +6,5 @@ def test_demo_runs_without_api(capsys):
 
     output = capsys.readouterr().out
     assert "Self-reskilling Text-to-SQL demo" in output
-    assert "67/100" in output
-    assert "53/100" in output
-    assert "22/50" in output
-    assert "257/500" in output
+    assert "Before / After Skill Checks" in output
+    assert "Current Evaluation Results" not in output

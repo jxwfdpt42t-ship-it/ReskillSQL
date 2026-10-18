@@ -76,13 +76,6 @@ flowchart LR
 | Experience memory | `text2sql_evolver/memory/memrl.py`, `experience_store.py`, `round_learning.py` | SQL episodes, candidate-validation evidence, semantic recall, utility selection and feedback |
 | Benchmark | `text2sql_evolver/benchmarks/` | BIRD adapters, replay evaluation, update/holdout suite summary |
 
-## Current Self-Update Suite
+## Evaluation Boundary
 
-| Split | Before | After | Delta | Regressions |
-|---|---:|---:|---:|---:|
-| Live BIRD 100 old-skill vs new-skill | 58/100 | 67/100 | +9.00% | 3 |
-| Update replay | 53/100 | 59/100 | +6.00% | 0 |
-| Holdout replay | 20/50 | 22/50 | +4.00% | 0 |
-| 500-example replay collection | 232/500 | 257/500 | +5.00% | 6 |
-
-Improved categories in the 500-example collection: `projection`, `aggregation`, `value_grounding`, `schema_linking`, `join_path`, `ratio_numeric`.
+The repository provides live comparison, replay diagnostics, benchmark construction, and report-generation tools. Provider-backed result artifacts are local and intentionally not committed. Final claims should be made only after freezing the benchmark split, model configuration, Skill/Memory state, and holdout protocol.
