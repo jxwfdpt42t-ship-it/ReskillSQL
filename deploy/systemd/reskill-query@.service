@@ -1,0 +1,26 @@
+[Unit]
+Description=ReskillSQL query worker %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=reskill
+Group=reskill
+WorkingDirectory=/opt/reskill
+EnvironmentFile=/etc/reskill/runtime.env
+ExecStart=/opt/reskill/.venv/bin/text2sql-runtime --root /var/lib/reskill worker --kind query --timeout 180
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/reskill
+MemoryMax=1G
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

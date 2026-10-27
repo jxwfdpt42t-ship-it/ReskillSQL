@@ -59,8 +59,10 @@ class EvolutionOrchestrator:
         fixability_filter: QuerySkillFixabilityFilter | None = None,
         console: Console | None = None,
         memory=None,
+        gate: SQLAwareGate | None = None,
     ) -> None:
         self.memory = memory
+        self.gate = gate
         self.settings = settings
         self.runner = runner
         self.judge = judge or ExecutionJudge()
@@ -278,11 +280,11 @@ class EvolutionOrchestrator:
             finally:
                 self.skill_editor.write(self.settings.query_skill_path, original_skill)
             after_validation_accuracy = accuracy([_CorrectOnly(row["correct"]) for row in after_validation_rows])
-            gate_decision = SQLAwareGate(
+            gate_decision = (self.gate or SQLAwareGate(
                 min_delta=validation_min_delta,
                 min_score=gate_min_score,
                 require_target_improvement=require_target_improvement,
-            ).decide(
+            )).decide(
                 before_rows=before_validation_rows,
                 after_rows=after_validation_rows,
                 patch_metadata=patch_metadata,

@@ -30,6 +30,7 @@ agent_workspace/
 *.bak
 .pytest_cache/
 /data/memrl/
+/var/
 text2sql_deepagent.egg-info/
 self_evolving_text2sql.egg-info/
 

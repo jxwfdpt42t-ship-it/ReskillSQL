@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sqlite3
 import time
+from contextlib import closing
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,6 +21,7 @@ class ExecutionResult:
     ok: bool
     rows: list[tuple[Any, ...]]
     error: str | None = None
+    truncated: bool = False
 
 
 @dataclass(frozen=True)
@@ -34,12 +36,12 @@ def is_read_only_sql(sql: str) -> bool:
     return bool(re.match(r"^\s*(WITH\b.*?SELECT|SELECT)\b", sql, re.IGNORECASE | re.DOTALL)) and not WRITE_PATTERN.search(sql)
 
 
-def execute_sql(database_path: Path, sql: str, timeout_ms: int = 5000) -> ExecutionResult:
+def execute_sql(database_path: Path, sql: str, timeout_ms: int = 5000, *, max_rows: int | None = None) -> ExecutionResult:
     if not is_read_only_sql(sql):
         return ExecutionResult(ok=False, rows=[], error="Only read-only SELECT SQL is allowed.")
 
     try:
-        with sqlite3.connect(database_path) as conn:
+        with closing(sqlite3.connect(database_path.resolve().as_uri() + "?mode=ro", uri=True)) as conn:
             conn.execute("PRAGMA query_only = ON")
             conn.execute(f"PRAGMA busy_timeout = {timeout_ms}")
             started = time.monotonic()
@@ -48,9 +50,13 @@ def execute_sql(database_path: Path, sql: str, timeout_ms: int = 5000) -> Execut
                 return int((time.monotonic() - started) * 1000 > timeout_ms)
 
             conn.set_progress_handler(_interrupt_if_slow, 1000)
-            rows = conn.execute(sql).fetchall()
+            cursor = conn.execute(sql)
+            rows = cursor.fetchall() if max_rows is None else cursor.fetchmany(max_rows + 1)
+            truncated = max_rows is not None and len(rows) > max_rows
+            if truncated:
+                rows = rows[:max_rows]
             conn.set_progress_handler(None, 0)
-        return ExecutionResult(ok=True, rows=_normalize_rows(rows))
+        return ExecutionResult(ok=True, rows=_normalize_rows(rows), truncated=truncated)
     except Exception as exc:
         return ExecutionResult(ok=False, rows=[], error=str(exc))
 

@@ -6,6 +6,10 @@ The project changes versioned skills and tool-use policies—not model weights�
 
 **Quick links:** [Architecture](docs/ARCHITECTURE.md) · [Experience Memory](docs/MEMORY.md) · [Benchmark Protocol](docs/BENCHMARK_PROTOCOL.md) · [Quickstart](docs/QUICKSTART.md) · [FAQ](docs/FAQ.md)
 
+**Serving and background learning:** the optional [single-host runtime](docs/DEPLOYMENT.md) provides an authenticated job API, durable queues with fenced leases, isolated evolution workspaces, and atomic Skill/Memory releases with rollback. Queries pin a read-only release; learning runs in separate worker processes and publishes only after development checks. This is a deployment implementation and runbook, not a claim that a public service has been deployed or load-tested.
+
+中文说明：[在线查询、后台队列与版本发布](docs/DEPLOYMENT.zh.md)。
+
 Optional MemRL-style experience memory is available for the evolver: it persists SQL attempts and rejected-Skill validation evidence, retrieves by semantic relevance and learned utility, and updates memory values from task feedback. The integration reuses a pinned, MIT-licensed subset of MemRL and records its exact provenance. See [Experience Memory](docs/MEMORY.md) or the [Chinese implementation notes](docs/MEMRL_MEMORY.zh.md). Memory is off by default.
 
 ```text

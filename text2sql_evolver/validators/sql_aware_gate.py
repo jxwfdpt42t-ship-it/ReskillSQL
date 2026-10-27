@@ -22,6 +22,7 @@ class SQLAwareGate:
         require_target_improvement: bool = False,
         min_score: int = 4,
         max_patch_words: int = 120,
+        allow_weak_pass: bool = True,
     ) -> None:
         self.min_delta = min_delta
         self.max_regressions = max_regressions
@@ -29,6 +30,7 @@ class SQLAwareGate:
         self.require_target_improvement = require_target_improvement
         self.min_score = min_score
         self.max_patch_words = max_patch_words
+        self.allow_weak_pass = allow_weak_pass
 
     def decide(
         self,
@@ -39,6 +41,7 @@ class SQLAwareGate:
         protected_before_rows: list[dict[str, Any]] | None = None,
         protected_after_rows: list[dict[str, Any]] | None = None,
     ) -> SQLAwareGateDecision:
+        before_rows, after_rows = _align_rows(before_rows, after_rows)
         before_accuracy = _accuracy(before_rows)
         after_accuracy = _accuracy(after_rows)
         delta = after_accuracy - before_accuracy
@@ -109,6 +112,9 @@ class SQLAwareGate:
         if not regressions:
             metrics["gate_level"] = "strong_pass"
             return SQLAwareGateDecision(True, f"strong_pass_score={scorecard['total']}_delta={delta:.4f}", metrics)
+        if not self.allow_weak_pass:
+            metrics["gate_level"] = "reject"
+            return SQLAwareGateDecision(False, "production_gate_rejects_regressions", metrics)
         metrics["gate_level"] = "weak_pass"
         if len(regressions) > self.max_regressions:
             return SQLAwareGateDecision(True, f"skillopt_pass_with_regressions={len(regressions)}_delta={delta:.4f}", metrics)
@@ -120,11 +126,20 @@ def _accuracy(rows: list[dict[str, Any]]) -> float:
 
 
 def _regressions(before_rows: list[dict[str, Any]], after_rows: list[dict[str, Any]]) -> list[str]:
+    before_rows, after_rows = _align_rows(before_rows, after_rows)
     return [
         str(after["id"])
         for before, after in zip(before_rows, after_rows)
         if before.get("correct") and not after.get("correct")
     ]
+
+
+def _align_rows(before_rows, after_rows):
+    before = {str(row["id"]): row for row in before_rows}
+    after = {str(row["id"]): row for row in after_rows}
+    if len(before) != len(before_rows) or len(after) != len(after_rows) or before.keys() != after.keys():
+        raise ValueError("Validation requires unique, matching task IDs")
+    return [before[key] for key in sorted(before)], [after[key] for key in sorted(before)]
 
 
 def _target_counts(rows: list[dict[str, Any]], target_categories: list[str]) -> dict[str, int]:

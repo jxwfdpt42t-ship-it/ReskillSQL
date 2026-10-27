@@ -20,11 +20,16 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+serve = [
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+]
 dev = [
     "pytest>=8.0.0",
 ]
 
 [project.scripts]
+text2sql-runtime = "text2sql_evolver.runtime.cli:main"
 text2sql-agent = "agent:main"
 text2sql-evolve = "text2sql_evolver.run_round:main"
 text2sql-prepare-bird = "text2sql_evolver.bird_adapter:main"
