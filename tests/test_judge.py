@@ -1,35 +1,43 @@
 from pathlib import Path
 import sqlite3
+import pytest
 
 from text2sql_evolver.judge import execute_sql
 from text2sql_evolver.judge import judge_sql
 from text2sql_evolver.llm import extract_sql
 
 
-ROOT = Path(__file__).resolve().parents[1]
+@pytest.fixture
+def customer_db(tmp_path):
+    path = tmp_path / "customers.sqlite"
+    with sqlite3.connect(path) as db:
+        db.execute("CREATE TABLE Customer(CustomerId INTEGER PRIMARY KEY, Country TEXT)")
+        db.executemany("INSERT INTO Customer VALUES (?, ?)",
+                       [(1, "Canada"), (2, "Canada"), (3, "USA"), (4, "Brazil")])
+    return path
 
 
-def test_judge_accepts_execution_equivalent_sql():
+def test_judge_accepts_execution_equivalent_sql(customer_db):
     result = judge_sql(
-        ROOT / "chinook.db",
+        customer_db,
         "SELECT COUNT(CustomerId) FROM Customer WHERE Country = 'Canada';",
         "SELECT COUNT(*) FROM Customer WHERE Country = 'Canada';",
     )
     assert result.correct
 
 
-def test_judge_rejects_wrong_result():
+def test_judge_rejects_wrong_result(customer_db):
     result = judge_sql(
-        ROOT / "chinook.db",
+        customer_db,
         "SELECT COUNT(*) FROM Customer WHERE Country = 'USA';",
         "SELECT COUNT(*) FROM Customer WHERE Country = 'Canada';",
     )
     assert not result.correct
 
 
-def test_judge_accepts_unordered_rows_when_gold_has_no_order_by():
+def test_judge_accepts_unordered_rows_when_gold_has_no_order_by(customer_db):
     result = judge_sql(
-        ROOT / "chinook.db",
+        customer_db,
         "SELECT Country FROM Customer WHERE Country IN ('Brazil', 'Canada') GROUP BY Country ORDER BY Country DESC;",
         "SELECT Country FROM Customer WHERE Country IN ('Brazil', 'Canada') GROUP BY Country;",
     )
@@ -37,9 +45,9 @@ def test_judge_accepts_unordered_rows_when_gold_has_no_order_by():
     assert result.reason == "execution_match_unordered"
 
 
-def test_judge_blocks_write_sql():
+def test_judge_blocks_write_sql(customer_db):
     result = judge_sql(
-        ROOT / "chinook.db",
+        customer_db,
         "DELETE FROM Customer;",
         "SELECT COUNT(*) FROM Customer;",
     )
